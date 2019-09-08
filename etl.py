@@ -6,6 +6,14 @@ from pyspark.sql           import SparkSession
 from pyspark.sql.functions import udf, col
 from pyspark.sql.functions import year, month, dayofmonth, hour, weekofyear, date_format
 
+from pyspark.sql.functions import to_timestamp
+from pyspark.sql.types     import IntegerType
+from pyspark.sql           import Row, functions as F
+from pyspark.sql.window    import Window
+
+import time
+import datetime
+
 
 config = configparser.ConfigParser()
 config.read_file(open('dl.cfg'))
@@ -35,7 +43,7 @@ def process_song_data(spark, input_data, output_data):
     song_data = input_data + "song_data/*/*/*/*.json"
 
     # read song data file
-    df = spark.read.json(song_data)
+    df_song_data = spark.read.json(song_data)
 
     # extract columns to create songs table
     songs_table = df_song_data \
@@ -71,13 +79,14 @@ def process_log_data(spark, input_data, output_data):
     print("---[ process_log_data ]---")
 
     # get filepath to log data file
-    log_data = input_data + "log-data/*/*/*.json"
+#     log_data = input_data + "log-data/*/*/*.json"   # with S3 bucket
+    log_data = input_data + "log-data/*.json"    # local workspace
 
     # read log data file
-    df = spark.read.json(log_data)
+    df_log_data = spark.read.json(log_data)
     
     # filter by actions for song plays
-    df = df.where("page = 'NextSong'")
+    df_log_data = df_log_data.where("page = 'NextSong'")
 
     # extract columns for users table    
     users_table = df_log_data \
@@ -86,7 +95,7 @@ def process_log_data(spark, input_data, output_data):
                             col('firstName').alias('first_name'), 
                             col('lastName').alias('last_name'),
                             col('gender'),
-                            col('level')) \
+                            col('level') ) \
                     .dropna(how = "any", subset = ["user_id"]) \
                     .dropDuplicates()
     
@@ -122,7 +131,7 @@ def process_log_data(spark, input_data, output_data):
               .parquet(output_data + "time")
 
     # read in song data to use for songplays table
-    song_df = spark.read.json(song_data)
+    song_df = spark.read.json(input_data + "song_data/*/*/*/*.json")
 
     # extract columns from joined song and log datasets to create songplays table
     songplays_table = df_log_data \
@@ -141,8 +150,20 @@ def process_log_data(spark, input_data, output_data):
                                , year("datetime").alias("year")
                                , month("datetime").alias("month") )
 
+    # EXTRA step: add songplay_id column to the songplays table
+    songplays_table = songplays_table \
+                        .select( 'start_time', 'user_id', 'level', 'song_id'
+                               , 'artist_id', 'session_id', 'location', 'user_agent'
+                               , 'year', 'month'
+                               , F.row_number() \
+                                  .over( Window.partitionBy("year", "month") \
+                                               .orderBy( col("start_time").desc()
+                                                       , col("user_id").desc() ) ) \
+                                  .alias("songplay_id") )
+
     # write songplays table to parquet files partitioned by year and month
-#     songplays_table
+    songplays_table.write.partitionBy("year", "month") \
+                   .parquet(output_data + "songplays")
 
 
 def main():
@@ -153,12 +174,17 @@ def main():
     spark = create_spark_session()
 
 #     input_data = "s3a://udacity-dend/"
-# working in Udacity's workspace with smaller sample dataset
+#     output_data = "s3a://---my-own-S3-bucket---/dend-proj4/"
+
+    # working in Udacity's workspace with smaller sample dataset
     input_data = "./data/"
-    output_data = "./data/"
+    output_data = "./data/output/"
 
     process_song_data(spark, input_data, output_data)    
     process_log_data(spark, input_data, output_data)
+    
+    print("---[ DONE! ]---")
+
 
 
 if __name__ == "__main__":

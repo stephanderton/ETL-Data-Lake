@@ -24,6 +24,10 @@ os.environ['AWS_SECRET_ACCESS_KEY'] = config['AWS']['AWS_SECRET_ACCESS_KEY']
 
 def create_spark_session():
     """
+    Instantiate a SparkSession object.
+    
+    Create a SparkSession object and return to main process to process
+    song and log data 
     
     """    
     spark = SparkSession \
@@ -35,7 +39,21 @@ def create_spark_session():
 
 def process_song_data(spark, input_data, output_data):
     """
+    Process song data from Sparkify data warehouse.
     
+    Extract song data and create a *songs* table, and write to parquet files 
+    partitioned by year and artist.
+    Extract artist data and create an *artists* table, and write to parquet files.
+    
+    Parameters:
+        spark        : SparkSession object
+        input_data   : filepath to song data directories on S3
+        output_data  : filepath to table directories on S3 for storing the
+                       partitioned parquet files
+        
+    Returns:
+        none
+        
     """   
     print("---[ process_song_data ]---")
 
@@ -74,7 +92,27 @@ def process_song_data(spark, input_data, output_data):
 
 def process_log_data(spark, input_data, output_data):
     """
+    Process log data from Sparkify data warehouse.
     
+    Read in the log data and filter on actions for song plays only.
+    Extract user data, filtering out empty user ids and duplicates to create a *users* table,
+    and write to parquet files.
+    Create new columns for timestamp and datetime. Extract the start time (timestamp) and 
+    create a *time* table with additional columns for hour, day, week, month, year, weekday.
+    Write *time* table to parquet files partitioned by year and month.
+    Load song data and join with log data, and extrace fact-based data to create a *songplays*
+    table. Create an incremental songplay id column and write the *songplays* table to parquet
+    files partitioned by year and month.
+
+    Parameters:
+        spark        : SparkSession object
+        input_data   : filepath to log data directories on S3
+        output_data  : filepath to table directories on S3 for storing the
+                       partitioned parquet files
+        
+    Returns:
+        none
+        
     """   
     print("---[ process_log_data ]---")
 
@@ -168,7 +206,10 @@ def process_log_data(spark, input_data, output_data):
 
 def main():
     """
+    Build ETL Pipeline for Sparkify song play data.
     
+    Create a Spark session on AWS EMR cluster,
+    and process song and log data.
     """
     
     spark = create_spark_session()

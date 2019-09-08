@@ -2,7 +2,7 @@
 
 > **Stephanie Anderton**
 > DEND Project #4
-> September 3, 2019
+> September 8, 2019
 
 ## Sparkify Songplay Data Lake
 
@@ -65,11 +65,10 @@ This schema is not fully normalized, as the `level` feature is replicated in the
 
 The ETL pipeline extracts data from directories in S3, processes the data using Spark, and then writes it back in five new tables on S3.
 
-| File      | Purpose                                                      |
-| --------- | ------------------------------------------------------------ |
-| etl.py    | Reads and processes files from the song_data and log_data directories on S3, and loads them into a new **sparkify** data lake on S3. |
-| dl.cfg    | Contains AWS credentials.                                    |
-| *mylib.py | Library with methods for logging events during the ETL process. |
+| File   | Purpose                                                      |
+| ------ | ------------------------------------------------------------ |
+| etl.py | Reads and processes files from the song_data and log_data directories on S3, and loads them into a new **sparkify** data lake on S3. |
+| dl.cfg | Contains AWS credentials.                                    |
 
 \* *Additional code, not part of the project requirements.*
 
@@ -77,7 +76,7 @@ The ETL pipeline extracts data from directories in S3, processes the data using 
 
 In a terminal, run the following command to process the song and log datasets and load the data into the **sparkify** data lake:
 
-1. **python etl.py**,
+1. **python etl.py**
 
 The following is an example of the commands and output generated when running the scripts.
 
@@ -92,15 +91,6 @@ Check table counts...
 (base)
 steph@STEPH-LAPTOP MINGW64 ~/Udacity/DEND/PROJECT_4 (master)
 $
-```
-
-## Logfile Output
-
-### ETL
-```
-...
-ETL logs go here
-...
 ```
 
 ## Sample Queries
